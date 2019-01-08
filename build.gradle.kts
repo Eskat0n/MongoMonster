@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.3.11"
+    application
 }
 
 group = "com.codeparts.mongomonster"
@@ -20,6 +21,10 @@ dependencies {
     testCompile("junit", "junit", "4.12")
 }
 
+application {
+    mainClassName = "$group.MongoMonsterApp"
+}
+
 configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
@@ -27,4 +32,20 @@ configure<JavaPluginConvention> {
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
     kotlinOptions.languageVersion = "1.3"
+}
+
+tasks.create<Jar>("distroJar") {
+    setDuplicatesStrategy(DuplicatesStrategy.WARN)
+    manifest {
+        attributes(mapOf("Main-Class" to application.mainClassName))
+    }
+    val sourceMain = java.sourceSets["main"]
+    from(sourceMain.output)
+
+    configurations.runtimeClasspath.filter {
+        it.name.endsWith(".jar")
+    }.forEach { jar ->
+        from(zipTree(jar))
+    }
+    exclude("'META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA")
 }
